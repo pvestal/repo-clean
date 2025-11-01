@@ -216,7 +216,12 @@ For detailed help on any command: repo-clean <command> --help
         lint_parser.add_argument(
             '--fix',
             action='store_true',
-            help='Automatically fix issues where possible'
+            help='Fix SAFE formatting issues only (prettier, black, gofmt). NEVER changes logic.'
+        )
+        lint_parser.add_argument(
+            '--preview-fixes',
+            action='store_true',
+            help='Show what would be fixed without making changes (recommended first step)'
         )
         lint_parser.add_argument(
             '--format',
@@ -458,13 +463,32 @@ For detailed help on any command: repo-clean <command> --help
 
     def _execute_lint(self, linter: RepositoryLinter, args) -> int:
         """Execute lint command"""
+
+        # Safety check for --fix mode
+        if args.fix:
+            print("⚠️  SAFETY NOTICE: --fix mode enabled")
+            print("🔒 SAFE OPERATIONS ONLY:")
+            print("   ✅ Code formatting (prettier, black, gofmt, rustfmt)")
+            print("   ❌ Logic changes (ESLint rules, complexity fixes)")
+            print("   ❌ Variable renaming or structural changes")
+            print()
+
+            if not hasattr(args, 'force') or not args.force:
+                response = input("Continue with SAFE formatting fixes? [y/N]: ")
+                if response.lower() not in ['y', 'yes']:
+                    print("💡 Run 'repo-clean lint --preview-fixes' to see what would be fixed")
+                    return 0
+
         print("🔍 Running comprehensive code quality linting...")
 
         try:
+            # If preview-fixes is requested, force fix_mode to False but show fixable issues
+            actual_fix_mode = args.fix and not getattr(args, 'preview_fixes', False)
+
             results = linter.lint_repository(
                 ecosystems=args.ecosystems,
                 linters=args.linters,
-                fix_mode=args.fix
+                fix_mode=actual_fix_mode
             )
 
             if not results:
@@ -482,22 +506,37 @@ For detailed help on any command: repo-clean <command> --help
             else:
                 print("\n" + report)
 
-            # Count total issues for exit code
+            # Count total issues and fixable issues
             total_issues = 0
+            fixable_issues = 0
             for ecosystem_results in results.values():
                 if isinstance(ecosystem_results, dict):
-                    for linter_result in ecosystem_results.values():
+                    for linter_name, linter_result in ecosystem_results.items():
                         if isinstance(linter_result, dict) and 'issues' in linter_result:
                             total_issues += len(linter_result['issues'])
+                            # Count issues from safe fixable linters
+                            if linter_name in ['prettier', 'black', 'gofmt', 'rustfmt']:
+                                fixable_issues += len(linter_result['issues'])
 
             if total_issues > 0:
                 print(f"\n💡 Next steps:")
-                print(f"   • Fix {total_issues} code quality issues")
-                if args.fix:
-                    print("   • Re-run linting to verify fixes")
-                else:
-                    print("   • Use --fix flag to auto-fix many issues")
-                print("   • Consider adding linters to your CI/CD pipeline")
+                print(f"   📊 Found {total_issues} total issues")
+
+                if fixable_issues > 0:
+                    print(f"   🔧 {fixable_issues} are SAFELY auto-fixable (formatting only)")
+                    if not args.fix:
+                        print("   💡 Run 'repo-clean lint --preview-fixes' to see what would be fixed")
+                        print("   💡 Run 'repo-clean lint --fix' to apply SAFE formatting fixes")
+
+                remaining_issues = total_issues - fixable_issues
+                if remaining_issues > 0:
+                    print(f"   ⚠️  {remaining_issues} require manual review (logic/style choices)")
+
+                print("   🔄 Consider adding linters to your CI/CD pipeline")
+
+            if args.fix and fixable_issues > 0:
+                print(f"\n✅ Applied {fixable_issues} safe formatting fixes")
+                print("🔍 Re-run linting to verify fixes applied correctly")
 
             return 0  # Don't fail CI for linting issues by default
 

@@ -32,7 +32,7 @@ repo-clean is the **only tool** that combines file hygiene, bloat detection, AND
 ### 🧪 **Comprehensive Code Quality Linting**
 - **5 Ecosystems**: Python, JavaScript/TypeScript, Go, Rust, Java
 - **15+ Linters**: eslint, pylint, prettier, black, mypy, clippy, and more
-- **Auto-fixing**: Automatically fix formatting and style issues
+- **Safe Auto-fixing**: ONLY formatting fixes (prettier, black, gofmt) - NEVER logic changes
 - **Custom Analysis**: Complexity, security patterns, documentation quality
 
 ### 🛡️ **Safety First**
@@ -74,7 +74,10 @@ repo-clean rename --interactive
 # Run comprehensive code quality linting
 repo-clean lint
 
-# Auto-fix linting issues
+# Preview what could be safely fixed (recommended first)
+repo-clean lint --preview-fixes
+
+# Fix ONLY safe formatting issues (prettier, black, gofmt)
 repo-clean lint --fix
 
 # Full health check with recommendations
@@ -114,9 +117,9 @@ repo-clean report
    └── models/trained.pkl (156MB)  [Why: ML models should use Git LFS]
 
 🧪 Code Quality (3 ecosystems)
-   ├── Python: pylint (23 issues), black (8 issues), mypy ✅
-   ├── JavaScript: eslint (15 issues), prettier (12 issues)
-   └── Custom: complexity (3), security patterns ✅
+   ├── Python: pylint (23 issues - manual), black (8 issues - 🔧 fixable), mypy ✅
+   ├── JavaScript: eslint (15 issues - manual), prettier (12 issues - 🔧 fixable)
+   └── Custom: complexity (3 - manual), security patterns ✅
 
 ⚙️  Git Config (2 issues)
    ├── user.name: "root"           [Why: Poor attribution, not descriptive]
@@ -126,7 +129,8 @@ repo-clean report
    └── Missing *.backup* pattern   [Why: Future backup files will be tracked]
 
 💡 Run 'repo-clean clean --preview' to see proposed fixes
-🧪 Run 'repo-clean lint --fix' to auto-fix code quality issues
+🧪 Run 'repo-clean lint --preview-fixes' to see safe formatting fixes available
+🔧 Run 'repo-clean lint --fix' for SAFE formatting only (never logic changes)
 📚 Run 'repo-clean explain backup-files' to learn more
 ```
 

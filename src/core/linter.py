@@ -174,6 +174,9 @@ class RepositoryLinter:
         """Build linter command with appropriate flags"""
         cmd = linter_config['cmd'].split()
 
+        # SAFETY: Only allow safe formatting fixes, never logic changes
+        safe_fixable_linters = ['prettier', 'black', 'gofmt', 'rustfmt']
+
         # Add format flags for machine-readable output
         if linter_name == 'pylint':
             cmd.extend(['--output-format=json'])
@@ -181,13 +184,19 @@ class RepositoryLinter:
             cmd.extend(['--format=json'])
         elif linter_name == 'eslint':
             cmd.extend(['--format=json'])
+            # NEVER auto-fix ESLint - too risky, only show what could be fixed
             if fix_mode:
-                cmd.append('--fix')
+                cmd.append('--fix-dry-run')  # Safe: shows fixes without applying
         elif linter_name == 'prettier':
-            if fix_mode:
-                cmd.append('--write')
+            if fix_mode and linter_name in safe_fixable_linters:
+                cmd.append('--write')  # Safe: only formatting
             else:
                 cmd.append('--check')
+        elif linter_name == 'black':
+            if fix_mode and linter_name in safe_fixable_linters:
+                pass  # black fixes by default
+            else:
+                cmd.append('--check')  # Just check, don't fix
 
         # Add file patterns
         if linter_config['files']:
