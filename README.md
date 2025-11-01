@@ -22,6 +22,9 @@ Every developer has encountered repositories cluttered with:
 ### 🔍 **Smart Detection**
 - Finds backup files using intelligent pattern matching
 - Identifies problematic naming conventions
+- Detects bloat directories that shouldn't be in repos
+- Finds nested git repositories and oversized project directories
+- Flags large files that should use Git LFS
 - Detects git configuration inconsistencies
 - Analyzes `.gitignore` coverage gaps
 
@@ -82,6 +85,20 @@ repo-clean report
    ├── ENHANCED_user_service.py    [Why: Non-descriptive, unprofessional]
    ├── WORKING_api_handler.py      [Why: Suggests experimental code]
    └── FIXED_database_utils.py     [Why: Temporary naming became permanent]
+
+💾 Bloat Directories (3 found)
+   ├── node_modules/ (847.2MB)     [Why: Should be in .gitignore, slows clones]
+   ├── __pycache__/ (23.1MB)       [Why: Generated files, environment-specific]
+   └── .pytest_cache/ (5.8MB)      [Why: Test artifacts, should be temporary]
+
+📁 Non-repo Directories (2 found)
+   ├── legacy-project/             [Why: Nested .git found, should be submodule]
+   └── data-warehouse/             [Why: 2.1GB directory, consider separate repo]
+
+📊 Large Files (4 found)
+   ├── assets/demo.mp4 (45.2MB)    [Why: Use Git LFS for media files]
+   ├── data/export.zip (12.8MB)    [Why: Archives should use external storage]
+   └── models/trained.pkl (156MB)  [Why: ML models should use Git LFS]
 
 ⚙️  Git Config (2 issues)
    ├── user.name: "root"           [Why: Poor attribution, not descriptive]
