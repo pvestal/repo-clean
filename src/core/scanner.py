@@ -15,53 +15,65 @@ class RepositoryScanner:
     def __init__(self, repository_path: Path):
         self.repository_path = Path(repository_path)
 
-        # Common bloat patterns
+        # Common bloat patterns by ecosystem
         self.bloat_patterns = [
-            "node_modules",
-            "__pycache__",
-            ".pytest_cache",
-            ".mypy_cache",
-            ".coverage",
-            "*.egg-info",
-            "dist",
-            "build",
-            ".tox",
-            ".venv",
-            "venv",
-            "env",
-            ".DS_Store",
-            "Thumbs.db",
-            "*.log",
-            "*.tmp",
-            "*.cache"
+            # Universal
+            ".DS_Store", "Thumbs.db", "*.log", "*.tmp", "*.cache",
+
+            # Python
+            "__pycache__", ".pytest_cache", ".mypy_cache", ".coverage",
+            "*.egg-info", ".tox", ".venv", "venv", "env", "htmlcov",
+
+            # JavaScript/Node.js
+            "node_modules", "dist", "build", "out", ".next", ".nuxt",
+            ".vuepress", "coverage", ".nyc_output", "*.tsbuildinfo",
+            "tsconfig.tsbuildinfo", ".parcel-cache", ".cache",
+
+            # Build tools
+            "webpack-stats.json", "bundle-stats.json", ".eslintcache",
+
+            # IDE/Editor
+            ".vscode", ".idea", "*.swp", "*.swo", "*~",
+
+            # OS
+            ".Trashes", ".fseventsd", ".Spotlight-V100", ".TemporaryItems"
         ]
 
         # Backup file patterns
         self.backup_patterns = [
-            "*.backup",
-            "*.bak",
-            "*.old",
-            "*~",
-            "*.orig",
-            "*.save",
-            "#*#",
-            ".#*"
+            # Universal backup patterns
+            "*.backup", "*.bak", "*.old", "*~", "*.orig", "*.save",
+            "#*#", ".#*",
+
+            # JavaScript/Node.js specific
+            "package.json.backup", "package-lock.json.backup",
+            "yarn.lock.backup", "tsconfig.json.backup",
+            "webpack.config.js.backup", ".eslintrc.backup",
+
+            # Build artifacts that might be backed up
+            "*.js.backup", "*.ts.backup", "*.jsx.backup", "*.tsx.backup",
+
+            # Git merge artifacts
+            "*.BACKUP.*", "*.BASE.*", "*.LOCAL.*", "*.REMOTE.*",
+            "*.orig"
         ]
 
         # Problematic naming patterns
         self.naming_patterns = [
-            "ENHANCED_*",
-            "WORKING_*",
-            "FIXED_*",
-            "FINAL_*",
-            "NEW_*",
-            "OLD_*",
-            "TEMP_*",
-            "TEST_*",
-            "COPY_*",
-            "*_COPY",
-            "*_OLD",
-            "*_NEW"
+            # Universal problematic patterns
+            "ENHANCED_*", "WORKING_*", "FIXED_*", "FINAL_*",
+            "NEW_*", "OLD_*", "TEMP_*", "TEST_*", "COPY_*",
+            "*_COPY", "*_OLD", "*_NEW", "*_BACKUP",
+
+            # JavaScript/Node.js specific
+            "component.backup.*", "WORKING_*.js", "FIXED_*.ts",
+            "OLD_*.jsx", "NEW_*.tsx", "TEMP_*.vue",
+            "*-old.js", "*-new.ts", "*-working.jsx",
+            "*-backup.tsx", "*-copy.vue",
+
+            # Framework specific temporary files
+            "untitled*.js", "untitled*.ts", "Untitled-*.jsx",
+            "Copy_of_*", "Copy of *", "- Copy.*"
         ]
 
     def scan_repository(self, issue_types: Optional[List[str]] = None) -> Dict[str, List[Dict]]:

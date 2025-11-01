@@ -19,14 +19,21 @@ Every developer has encountered repositories cluttered with:
 
 ## ✨ Features
 
+### 🔍 **Complete Repository Health Toolkit**
+repo-clean is the **only tool** that combines file hygiene, bloat detection, AND comprehensive code quality linting in one unified interface.
+
 ### 🔍 **Smart Detection**
-- Finds backup files using intelligent pattern matching
-- Identifies problematic naming conventions
-- Detects bloat directories that shouldn't be in repos
-- Finds nested git repositories and oversized project directories
-- Flags large files that should use Git LFS
-- Detects git configuration inconsistencies
-- Analyzes `.gitignore` coverage gaps
+- **File Hygiene**: Backup files, naming conventions, git config issues
+- **Bloat Detection**: `node_modules`, build artifacts, oversized directories
+- **Repository Structure**: Nested repos, directories that should be separate projects
+- **Large Files**: Assets that should use Git LFS or external storage
+- **Code Quality**: Multi-ecosystem linting (Python, JavaScript, Go, Rust, Java)
+
+### 🧪 **Comprehensive Code Quality Linting**
+- **5 Ecosystems**: Python, JavaScript/TypeScript, Go, Rust, Java
+- **15+ Linters**: eslint, pylint, prettier, black, mypy, clippy, and more
+- **Auto-fixing**: Automatically fix formatting and style issues
+- **Custom Analysis**: Complexity, security patterns, documentation quality
 
 ### 🛡️ **Safety First**
 - **Preview mode**: See exactly what will change before committing
@@ -64,6 +71,12 @@ repo-clean clean --backup-files
 # Fix naming conventions
 repo-clean rename --interactive
 
+# Run comprehensive code quality linting
+repo-clean lint
+
+# Auto-fix linting issues
+repo-clean lint --fix
+
 # Full health check with recommendations
 repo-clean report
 ```
@@ -100,6 +113,11 @@ repo-clean report
    ├── data/export.zip (12.8MB)    [Why: Archives should use external storage]
    └── models/trained.pkl (156MB)  [Why: ML models should use Git LFS]
 
+🧪 Code Quality (3 ecosystems)
+   ├── Python: pylint (23 issues), black (8 issues), mypy ✅
+   ├── JavaScript: eslint (15 issues), prettier (12 issues)
+   └── Custom: complexity (3), security patterns ✅
+
 ⚙️  Git Config (2 issues)
    ├── user.name: "root"           [Why: Poor attribution, not descriptive]
    └── user.email: missing         [Why: Required for proper attribution]
@@ -108,6 +126,7 @@ repo-clean report
    └── Missing *.backup* pattern   [Why: Future backup files will be tracked]
 
 💡 Run 'repo-clean clean --preview' to see proposed fixes
+🧪 Run 'repo-clean lint --fix' to auto-fix code quality issues
 📚 Run 'repo-clean explain backup-files' to learn more
 ```
 
@@ -115,6 +134,7 @@ repo-clean report
 
 - [Installation Guide](docs/installation.md)
 - [Usage Examples](docs/usage.md)
+- [Code Quality Linting](docs/linting.md)
 - [Safety Features](docs/safety.md)
 - [Error Handling](docs/error-handling.md)
 - [Best Practices](docs/best-practices.md)

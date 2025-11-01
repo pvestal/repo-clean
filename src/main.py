@@ -17,6 +17,7 @@ from .utils.safety import SafetyManager
 from .core.scanner import RepositoryScanner
 from .core.cleaner import RepositoryCleaner
 from .core.reporter import RepositoryReporter
+from .core.linter import RepositoryLinter
 
 
 class RepoCleanCLI:
@@ -78,6 +79,8 @@ Examples:
   repo-clean clean --preview          # Preview cleanup operations
   repo-clean clean --backup-files     # Remove backup files safely
   repo-clean rename --interactive     # Fix naming conventions
+  repo-clean lint                     # Run comprehensive code quality linting
+  repo-clean lint --fix               # Auto-fix linting issues where possible
   repo-clean explain backup_files     # Learn about backup file issues
   repo-clean report                   # Full repository health report
 
@@ -113,6 +116,7 @@ For detailed help on any command: repo-clean <command> --help
         self._add_scan_command(subparsers)
         self._add_clean_command(subparsers)
         self._add_rename_command(subparsers)
+        self._add_lint_command(subparsers)
         self._add_explain_command(subparsers)
         self._add_report_command(subparsers)
         self._add_status_command(subparsers)
@@ -130,7 +134,7 @@ For detailed help on any command: repo-clean <command> --help
         scan_parser.add_argument(
             '--types',
             nargs='+',
-            choices=['backup_files', 'naming_conventions', 'git_config', 'gitignore_gaps'],
+            choices=['backup_files', 'naming_conventions', 'bloat_directories', 'non_repo_directories', 'large_files', 'git_config', 'gitignore_gaps'],
             help='Specific issue types to scan for'
         )
         scan_parser.add_argument(
@@ -191,6 +195,41 @@ For detailed help on any command: repo-clean <command> --help
             help='Show proposed renames without making changes'
         )
 
+    def _add_lint_command(self, subparsers):
+        """Add the lint command"""
+        lint_parser = subparsers.add_parser(
+            'lint',
+            help='Run code quality linting across ecosystems',
+            description='Comprehensive linting using ecosystem-specific tools (eslint, pylint, etc.)'
+        )
+        lint_parser.add_argument(
+            '--ecosystems',
+            nargs='+',
+            choices=['python', 'javascript', 'go', 'rust', 'java'],
+            help='Specific ecosystems to lint (auto-detected if not specified)'
+        )
+        lint_parser.add_argument(
+            '--linters',
+            nargs='+',
+            help='Specific linters to run (e.g., pylint, eslint, prettier)'
+        )
+        lint_parser.add_argument(
+            '--fix',
+            action='store_true',
+            help='Automatically fix issues where possible'
+        )
+        lint_parser.add_argument(
+            '--format',
+            choices=['text', 'json'],
+            default='text',
+            help='Output format for linting results'
+        )
+        lint_parser.add_argument(
+            '--output', '-o',
+            type=str,
+            help='Save linting report to specified file'
+        )
+
     def _add_explain_command(self, subparsers):
         """Add the explain command"""
         explain_parser = subparsers.add_parser(
@@ -200,7 +239,7 @@ For detailed help on any command: repo-clean <command> --help
         )
         explain_parser.add_argument(
             'issue_type',
-            choices=['backup_files', 'naming_conventions', 'git_config', 'gitignore_gaps'],
+            choices=['backup_files', 'naming_conventions', 'bloat_directories', 'non_repo_directories', 'large_files', 'git_config', 'gitignore_gaps'],
             help='Type of issue to explain'
         )
         explain_parser.add_argument(
@@ -285,6 +324,7 @@ For detailed help on any command: repo-clean <command> --help
         safety_manager = SafetyManager(repo_path)
         cleaner = RepositoryCleaner(repo_path, safety_manager, self.error_handler)
         reporter = RepositoryReporter(repo_path, self.explanation_engine)
+        linter = RepositoryLinter(repo_path)
 
         # Execute command
         if args.command == 'scan':
@@ -293,6 +333,8 @@ For detailed help on any command: repo-clean <command> --help
             return self._execute_clean(cleaner, args)
         elif args.command == 'rename':
             return self._execute_rename(cleaner, args)
+        elif args.command == 'lint':
+            return self._execute_lint(linter, args)
         elif args.command == 'explain':
             return self._execute_explain(args)
         elif args.command == 'report':
@@ -411,6 +453,60 @@ For detailed help on any command: repo-clean <command> --help
                 ErrorCategory.INTERNAL,
                 ErrorSeverity.HIGH,
                 ErrorContext(operation="rename"),
+                cause=e
+            )
+
+    def _execute_lint(self, linter: RepositoryLinter, args) -> int:
+        """Execute lint command"""
+        print("🔍 Running comprehensive code quality linting...")
+
+        try:
+            results = linter.lint_repository(
+                ecosystems=args.ecosystems,
+                linters=args.linters,
+                fix_mode=args.fix
+            )
+
+            if not results:
+                print("ℹ️ No supported ecosystems found or no linters available.")
+                print("💡 Install linters like pylint, eslint, or prettier to enable linting.")
+                return 0
+
+            # Generate report
+            report = linter.generate_linting_report(results, format=args.format)
+
+            if args.output:
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    f.write(report)
+                print(f"✅ Linting report saved to: {args.output}")
+            else:
+                print("\n" + report)
+
+            # Count total issues for exit code
+            total_issues = 0
+            for ecosystem_results in results.values():
+                if isinstance(ecosystem_results, dict):
+                    for linter_result in ecosystem_results.values():
+                        if isinstance(linter_result, dict) and 'issues' in linter_result:
+                            total_issues += len(linter_result['issues'])
+
+            if total_issues > 0:
+                print(f"\n💡 Next steps:")
+                print(f"   • Fix {total_issues} code quality issues")
+                if args.fix:
+                    print("   • Re-run linting to verify fixes")
+                else:
+                    print("   • Use --fix flag to auto-fix many issues")
+                print("   • Consider adding linters to your CI/CD pipeline")
+
+            return 0  # Don't fail CI for linting issues by default
+
+        except Exception as e:
+            raise RepoCleanError(
+                f"Linting operation failed: {e}",
+                ErrorCategory.INTERNAL,
+                ErrorSeverity.HIGH,
+                ErrorContext(operation="lint"),
                 cause=e
             )
 
